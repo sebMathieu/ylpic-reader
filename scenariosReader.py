@@ -1,5 +1,5 @@
 ## Classes and methods needed to convert the series of Excel files with the scenarios data
-# Requires xlrd which can be installed with "pip install xlrd".
+# Requires xlrd which can be installed with "pip3 install xlrd".
 #@author Sebastien MATHIEU
 
 import xlrd
@@ -14,6 +14,7 @@ CALENDAR_FILE="YearCalendar 2015-2020-2030-2050 for profile.xlsx"
 LOAD_PROFILES_FILE="catalogue charge V3.xlsx"
 
 ## Add loads to the corresponding network graph from the scenarios files.
+# @param folderPath Path to the folder with the Excel data files.
 # @param year Year of the scenarios.
 # @param day Day of the year.
 # @param graph Multigraph to add the loads.
@@ -244,8 +245,13 @@ class LoadData:
 		self.refPowers={}
 		self.activeProfiles={}
 
-	## @var number Number of the load.
-	## @var bus Id of the bus the load is attached to.
-	## @var loadType Type of the load.
-	## @var refPowers Dictionary with the reference powers.
-	## @var activeProfiles Dictionary with the active profiles.
+	## @var number
+	# Number of the load.
+	## @var bus
+	# Id of the bus the load is attached to.
+	## @var loadType
+	# Type of the load.
+	## @var refPowers
+	# Dictionary with the reference powers.
+	## @var activeProfiles
+	# Dictionary with the active profiles.

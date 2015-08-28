@@ -10,7 +10,7 @@ import networkMaker
 import scenariosReader
 
 ## Entry point of the program.
-# @argv Program parameters.
+# @param argv Program parameters.
 def main(argv):
 	# Read instance folder
 	if len(argv) < 1 :
@@ -117,7 +117,7 @@ def makeNetworkDot(networkGraph):
 
 ## Display help of the program.
 def displayHelp():
-	text="Usage :\n\tpython dotConverter.py dataFolder\n"
+	text="Usage :\n\tpython3 dotConverter.py dataFolder\n"
 	print(text)
 
 # Starting point from python #

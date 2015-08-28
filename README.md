@@ -33,3 +33,10 @@ scenariosReader.readScenarios(folderPath,2020,1,graph,'H')
 
 create a NetworkX graph with the raw data attached to each node or edge as a dictionnary.
 In this case it will be data for the first day of 2020 considering a "high" scenario.
+
+The documentation can be easily generated with the command
+
+```
+doxygen doxyfile
+```
+assuming you have doxygen installed on your computer.

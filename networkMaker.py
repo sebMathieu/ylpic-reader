@@ -1,5 +1,5 @@
 ## Classes and methods needed to convert the series of Excel files with the characteristics of the network to a CSV file.
-# Requires xlrd and networkx which can be installed with "pip install xlrd" and "pip install networkx".
+# Requires xlrd and networkx which can be installed with "pip3 install xlrd" and "pip install networkx".
 #@author Sebastien MATHIEU
 
 import xlrd
@@ -50,12 +50,15 @@ def readBusesExcel(filePath,graph):
 				busCount+=1
 
 
-def excelStr2int(str):
-	v=str
-	if type(str) is type("") and str[0]=="'":
-		v=int(str[1:])
+## Convert a string from excel to an int.
+# @param s String.
+# @return Integer.
+def excelStr2int(s):
+	v=s
+	if type(s) is type("") and s[0]=="'":
+		v=int(s[1:])
 	else:
-		v=int(str)
+		v=int(s)
 	return v
 
 ## Make the network structure from the parameters given in excel files.
@@ -76,7 +79,7 @@ def makeNetwork(folderPath):
 
 ## Convert the multigraph of the network to a graph.
 # @param mg Multigraph.
-# @retrun Graph.
+# @return Graph.
 def multiGraphToGraph(mg):
 	g=networkx.Graph()
 
@@ -134,6 +137,7 @@ class CableData:
 	# @param cableType Type of the cable.
 	# @param R1 Direct conductance.
 	# @param X1 Direct reactance.
+	# @param C1 Direct capacitance.
 	# @param iMax Maximum current in the cable.
 	def __init__(self,cableType,R1=0,X1=0,C1=0,iMax=None):
 		self.cableType=cableType
@@ -142,13 +146,23 @@ class CableData:
 		self.C1=C1
 		self.iMax=float(iMax)
 
-	## @var cableType Type of the cable.
-	## @var iMax Maximum current in the cable.
-	## @var R1 Direct conductance.
-	## @var X1 Direct reactance.
+	## @var cableType
+	# Type of the cable.
+	## @var iMax
+	# Maximum current in the cable.
+	## @var R1
+	# Direct conductance.
+	## @var X1
+	# Direct reactance.
+	## @var C1
+	# Direct capacitance.
 
-def get_cable(cables, id, row, sheet):
-		# Cable potential prefixes of their id.
+## Get the cable associated to a line.
+# @param cables Cables data as a map.
+# @param row Row of the line.
+# @param sheet Excel sheet of the line file.
+def getCable(cables, row, sheet):
+	# Cable potential prefixes of their id.
 	CABLE_ID_PREFIXES=['S','A','Câble']
 	# Cable characteristics
 	# Number of the column of the section.
@@ -175,15 +189,14 @@ def get_cable(cables, id, row, sheet):
 			pass
 	if cable is None:
 		raise Exception(
-			"Cable %s not found with the following characteristics:\n section:%s, core:%s, insulation:%s, insulation voltage: %s" % (
-			id, section, core, insulation, insulationVoltage))
+			"Cable not found with the following characteristics:\n section:%s, core:%s, insulation:%s, insulation voltage: %s" % (section, core, insulation, insulationVoltage))
 
 	return cable
 
 
 ## Read the lines excel file.
 # @param filePath Path to the excel file with the information on the lines.
-# @param cables Cables data as a map (@see readCablesExcel).
+# @param cables Cables data as a map.
 # @param graph Graph to add edges to.
 def readLinesExcel(filePath,cables,graph):
 	# Constants of the buses excel files
@@ -243,7 +256,8 @@ def readLinesExcel(filePath,cables,graph):
 			if not closed:
 				openLines.add(id)
 
-		cable = get_cable(cables, id, row, sheet)# Get the length and compute the characteristics
+		# Get the length and compute the characteristics
+		cable = getCable(cables, row, sheet)
 		if not graph.has_edge(fromBus, toBus):
 			lineAttr={}
 			lineAttr["id"]=id
@@ -351,7 +365,11 @@ class TransformerData:
 		else:
 			return "Transformer"
 
-	## @var number Number of the transformer.
-	## @var id Id of the transformer.
-	## @var bus Bus to which the transformer is attached.
-	## @var pmax Maximal power of the transformer.
+	## @var number
+	# Number of the transformer.
+	## @var id
+	# Id of the transformer.
+	## @var bus
+	# Bus to which the transformer is attached.
+	## @var pmax
+	# Maximal power of the transformer.
