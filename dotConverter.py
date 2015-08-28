@@ -78,26 +78,24 @@ def makeNetworkDot(networkGraph):
 			pass
 
 		# Load
-		try:
-			for load in ndata["loads"]:
-				loadId="LOAD%s"%load.number
-				edgeAttr={"weight":1000}
-				if load.loadType in GENERATION_TYPES:
-					g.add_node(loadId,{"label": "~","shape":"circle","style":"bold","color":"#000000","fixedsize":"true", "penwidth":2, "width":0.2, "height":0.2,"fontsize":18})
-				elif load.loadType in INDUSTRIAL_TYPES:
-					g.add_node(loadId,{"xlabel":load.loadType,"label":" ","shape":"invtriangle","color":"#000000","fixedsize":"true", "penwidth":2, "width":0.2, "height":0.2,"portPos":"n","fontsize":10})
-					edgeAttr["tailport"]="n"
-				else:
-					g.add_node(loadId,{"xlabel":load.loadType,"label":" ","style":"filled","shape":"invtriangle","color":"#000000","fixedsize":"true", "penwidth":2, "width":0.2, "height":0.2,"portPos":"n","fontsize":10})
-					edgeAttr["tailport"]="n"
+		load=ndata["load"]
+		if load is not None:
+			loadId="LOAD%s"%load.number
+			edgeAttr={"weight":1000}
+			if load.loadType in GENERATION_TYPES:
+				g.add_node(loadId,{"label": "~","shape":"circle","style":"bold","color":"#000000","fixedsize":"true", "penwidth":2, "width":0.2, "height":0.2,"fontsize":18})
+			elif load.loadType in INDUSTRIAL_TYPES:
+				g.add_node(loadId,{"xlabel":load.loadType,"label":" ","shape":"invtriangle","color":"#000000","fixedsize":"true", "penwidth":2, "width":0.2, "height":0.2,"portPos":"n","fontsize":10})
+				edgeAttr["tailport"]="n"
+			else:
+				g.add_node(loadId,{"xlabel":load.loadType,"label":" ","style":"filled","shape":"invtriangle","color":"#000000","fixedsize":"true", "penwidth":2, "width":0.2, "height":0.2,"portPos":"n","fontsize":10})
+				edgeAttr["tailport"]="n"
 
-				# Connect the load
-				if tId is None:
-					g.add_edge(id,loadId,edgeAttr)
-				else:
-					g.add_edge(tId,loadId,edgeAttr)
-		except KeyError:
-			pass
+			# Connect the load
+			if tId is None:
+				g.add_edge(id,loadId,edgeAttr)
+			else:
+				g.add_edge(tId,loadId,edgeAttr)
 
 	# Create edges
 	for u,v,edata in networkGraph.edges(data=True):
