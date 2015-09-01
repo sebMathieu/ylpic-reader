@@ -235,18 +235,18 @@ def readScenariosExcel(filePath,year,graph,scenarioType='H'):
 # Load of the network which may be production and/or consumption.
 class LoadData:
 	## Constructor.
-	# @param number Number of the load.
+	# @param internalId Internal id of the load.
 	# @param bus Id of the bus the load is attached to.
 	# @param loadType Type of the load.
-	def __init__(self,number,bus,loadType):
-		self.number=number
+	def __init__(self,internalId,bus,loadType):
+		self.internalId=internalId
 		self.bus=bus
 		self.loadType=loadType
 		self.refPowers={}
 		self.activeProfiles={}
 
-	## @var number
-	# Number of the load.
+	## @var internalId
+	# Internal id of the load.
 	## @var bus
 	# Id of the bus the load is attached to.
 	## @var loadType

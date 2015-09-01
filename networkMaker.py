@@ -46,7 +46,7 @@ def readBusesExcel(filePath,graph):
 				graph.node[id]["connections"][connection_info] = connection_closed
 			else:
 				connections = {connection_info:connection_closed}
-				graph.add_node(id,{"number":busCount,"id":id,"baseVoltage":v,"count":1,"transformers":[],"load":None, "connections":connections})
+				graph.add_node(id,{"internalId":busCount,"id":id,"baseVoltage":v,"count":1,"transformers":[],"load":None, "connections":connections})
 				busCount+=1
 
 
@@ -229,6 +229,10 @@ def readLinesExcel(filePath,cables,graph):
 		id=excelStr2int(sheet.cell_value(row, LINE_ID_COLUMN))
 		fromBus=excelStr2int(sheet.cell_value(row, LINE_FROM_COLUMN))
 		toBus=excelStr2int(sheet.cell_value(row, LINE_TO_COLUMN))
+
+		if fromBus == toBus:
+			continue
+
 		if not graph.has_edge(fromBus, toBus):
 			# This is the first (and maybe only) segment of the link between these buses
 			fromBusBar = excelStr2int(sheet.cell_value(row, FROM_BUSBAR_COLUMN))
@@ -267,40 +271,40 @@ def readLinesExcel(filePath,cables,graph):
 			lineAttr["X1"]=lineAttr["length"]*cable.X1
 			lineAttr["C1"]=lineAttr["length"]*cable.C1
 			lineAttr["pMax"]=voltage*cable.iMax
-			lineAttr["number"]=lineCount
+			lineAttr["internalId"]=lineCount
 			lineAttr["closed"]=closed
+
+			lineCount += 1
+
+			# Add the line to the list
+			graph.add_edge(fromBus,toBus,id,lineAttr)
 		else:
-			continue #FIXME
-			e = graph[fromBus][toBus][1]
-			R1 = e["R1"]
-			X1 = e["X1"]
-			C1 = e["C1"]
-
-			from math import pi
-			omega = 2*pi*50
-
-			Z1 = R1 + 1j*X1
-			B1 = omega*C1
-			Z2 = cable.R1 + 1j*cable.X1
-			B2 = omega*cable.C1
-
-			Y3 = 1j*(B1+B2)/2
-			Z3 = 1/Y3 if abs(Y3) > 0 else 0
-			YY1 = Z3/(Z1*Z2+Z1*Z3+Z2*Z3)
-			YY2 = Z2/(Z1*Z2+Z1*Z3+Z2*Z3)
-			YY3 = Z1/(Z1*Z2+Z1*Z3+Z2*Z3)
-
-			Y12 = YY1+1j*B1/2
-			Y13 = YY2+1j*B2/2
-
-			graph[fromBus][toBus]["R1"] = YY1.real
-			graph[fromBus][toBus]["X1"] = YY1.imag
-			graph[fromBus][toBus]["C1"] = Y12.imag
-
-			print('%s | %s' % (Y12,Y13))
-
-		# Add the line to the list
-		graph.add_edge(fromBus,toBus,lineCount,lineAttr)
+			edgeData = graph.get_edge_data(fromBus,toBus,id)
+			# FIXME !!!
+			# R1 = edgeData["R1"]
+			# X1 = edgeData["X1"]
+			# C1 = edgeData["C1"]
+            #
+			# from math import pi
+			# omega = 2*pi*50
+            #
+			# Z1 = R1 + 1j*X1
+			# B1 = omega*C1
+			# Z2 = cable.R1 + 1j*cable.X1
+			# B2 = omega*cable.C1
+            #
+			# Y3 = 1j*(B1+B2)/2
+			# Z3 = 1/Y3 if abs(Y3) > 0 else 0
+			# YY1 = Z3/(Z1*Z2+Z1*Z3+Z2*Z3)
+			# YY2 = Z2/(Z1*Z2+Z1*Z3+Z2*Z3)
+			# YY3 = Z1/(Z1*Z2+Z1*Z3+Z2*Z3)
+            #
+			# Y12 = YY1+1j*B1/2
+			# Y13 = YY2+1j*B2/2
+            #
+			# edgeData["R1"] = YY1.real
+			# edgeData["X1"] = YY1.imag
+			# edgeData["C1"] = Y12.imag
 
 	if len(unknownBuses) > 0:
 		print("%s unknown buses in the lines file \"%s\":\n\t%s"%(len(unknownBuses),filePath,sorted(unknownBuses)))
@@ -347,12 +351,12 @@ def readLvTransformersExcel(filePath,graph):
 ## Data of a transformer.
 class TransformerData:
 	## Constructor
-	# @param number Number of the transformer.
+	# @param internalId Internal id of the transformer.
 	# @param id Id of the transformer.
 	# @param bus Bus to which the transformer is attached.
 	# @param pmax Maximal power of the transformer.
-	def __init__(self,number,id=None,bus=None,pmax=None):
-		self.number=number
+	def __init__(self,internalId,id=None,bus=None,pmax=None):
+		self.internalId=internalId
 		self.id=id
 		self.pmax=pmax
 		self.bus=bus

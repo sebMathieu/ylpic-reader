@@ -54,7 +54,7 @@ def makeNetworkDot(networkGraph):
 		origId=id
 		try:
 			origId=ndata["id"]
-			id="BUS%s"%ndata["number"]
+			id="BUS%s"%ndata["internalId"]
 		except KeyError:
 			unknownCount-=1
 			origId="?"
@@ -71,7 +71,7 @@ def makeNetworkDot(networkGraph):
 				t=ndata["transformers"][0]
 				transformersCount+=1
 
-				tId="TF%s"%t.number
+				tId="TF%s"%t.internalId
 				g.add_node(tId,{"xlabel":t.id,"shape":"circle","style":"filled","color":"#000000","fixedsize":"true","width":0.15,"height":0.15,"label":" ","fontsize":10})
 				g.add_edge(id,tId,{"weight":1000})
 		except KeyError:
@@ -80,7 +80,7 @@ def makeNetworkDot(networkGraph):
 		# Load
 		load=ndata["load"]
 		if load is not None:
-			loadId="LOAD%s"%load.number
+			loadId="LOAD%s"%load.internalId
 			edgeAttr={"weight":1000}
 			if load.loadType in GENERATION_TYPES:
 				g.add_node(loadId,{"label": "~","shape":"circle","style":"bold","color":"#000000","fixedsize":"true", "penwidth":2, "width":0.2, "height":0.2,"fontsize":18})
