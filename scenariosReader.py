@@ -3,7 +3,7 @@
 #@author Sebastien MATHIEU
 
 import xlrd
-import datetime
+import datetime, math
 
 # Constants
 ## File with the information on the scenarios.
@@ -36,9 +36,16 @@ def readLoadProfilesExcel(filePath,day,graph,profilesType):
 	# Constants
 	# Row of the headers profile
 	PROFILES_HEADERS_ROW={'R':5,'HP':8,'I1':8,'I2':9,'I3':9,'EC':8,'PV':0,'Wind':0,'IEP':1,'CHP':0}
+	# Sign (+1 or -1) of the profile, positive for a production.
+	PROFILES_SIGN={'R':-1, 'HP':-1,'I1':-1,'I2':-1,'I3':-1,'EC':-1,'PV':1,'Wind':1,'IEP':-1,'CHP':1}
+	# Power factors of each profiles.
+	PROFILES_POWER_FACTOR={'HP':0.91}
+	# Default power factor.
+	PROFILES_DEFAULT_POWER_FACTOR=0.95
 
 	# Obtain the base profiles
 	baseActiveProfiles={}
+	baseReactiveProfiles={}
 
 	# Single day not calendar dependent
 	for pType in ['EC']:
@@ -69,8 +76,22 @@ def readLoadProfilesExcel(filePath,day,graph,profilesType):
 			baseActiveProfiles[pType]=sheet.col_values(c, start_rowx=PROFILES_HEADERS_ROW[pType]+2, end_rowx=PROFILES_HEADERS_ROW[pType]+2+96)
 		elif pType in ['I1','I2','I3']:
 			baseActiveProfiles[pType]=sheet.col_values(c, start_rowx=PROFILES_HEADERS_ROW[pType]+2, end_rowx=PROFILES_HEADERS_ROW[pType]+2+96)
+			baseReactiveProfiles[pType]=sheet.col_values(c+1, start_rowx=PROFILES_HEADERS_ROW[pType]+2, end_rowx=PROFILES_HEADERS_ROW[pType]+2+96)
 		else:
 			raise Exception('Reading of the base profile of type %s not handled.'%pType)
+
+	# Set the correct sign to each base profile
+	for pType, profile in baseActiveProfiles.items():
+		profile=list(map(lambda x: x*PROFILES_SIGN[pType],profile))
+		baseActiveProfiles[pType]=profile
+
+		if pType in baseReactiveProfiles:
+			baseReactiveProfiles[pType]=list(map(lambda x: x*PROFILES_SIGN[pType],baseReactiveProfiles[pType]))
+		else:
+			if pType in PROFILES_POWER_FACTOR:
+				baseReactiveProfiles[pType]=list(map(lambda x: x*math.tan(math.acos(PROFILES_POWER_FACTOR[pType])),profile))
+			else:
+				baseReactiveProfiles[pType]=list(map(lambda x: x*math.tan(math.acos(PROFILES_DEFAULT_POWER_FACTOR)),profile))
 
 	# Iterate over the nodes
 	for n,ndata in graph.nodes(data=True):
@@ -84,14 +105,17 @@ def readLoadProfilesExcel(filePath,day,graph,profilesType):
 					continue
 				elif load.loadType in ['I1','I2','I3','IEP']:
 					load.activeProfiles[refType]=list(map(lambda x: load.refPowers[refType]*x,baseActiveProfiles[load.loadType]))
+					load.reactiveProfiles[refType]=list(map(lambda x: load.refPowers[refType]*x,baseReactiveProfiles[load.loadType]))
 				else:
 					raise Exception('Unhandled load type: "%s".'%load.loadType)
 			elif refType == 'inhab':
 				if not load.loadType in ['R']:
 					raise Exception('Inhabitant not handled with load type "%s".'%load.loadType)
 				load.activeProfiles['load']=list(map(lambda x: load.refPowers[refType]*x,baseActiveProfiles[load.loadType]))
+				load.reactiveProfiles['load']=list(map(lambda x: load.refPowers[refType]*x,baseReactiveProfiles[load.loadType]))
 			elif refType in baseActiveProfiles:
 				load.activeProfiles[refType]=list(map(lambda x: load.refPowers[refType]*x,baseActiveProfiles[refType]))
+				load.reactiveProfiles[refType]=list(map(lambda x: load.refPowers[refType]*x,baseReactiveProfiles[refType]))
 			else:
 				raise Exception('Production/consumption of type "%s" not handled.'%p)
 
@@ -244,6 +268,7 @@ class LoadData:
 		self.loadType=loadType
 		self.refPowers={}
 		self.activeProfiles={}
+		self.reactiveProfiles={}
 
 	## @var internalId
 	# Internal id of the load.
@@ -254,4 +279,6 @@ class LoadData:
 	## @var refPowers
 	# Dictionary with the reference powers.
 	## @var activeProfiles
-	# Dictionary with the active profiles.
+	# Dictionary with the active profiles. Productions are positive.
+	## @var reactiveProfiles
+	# Dictionary with the reactive profiles.
