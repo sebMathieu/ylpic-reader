@@ -101,7 +101,7 @@ def multiGraphToGraph(mg):
 
 	return g
 
-## Read the cables excel file.
+## Read the cables excel file content.
 # @param filePath Path to the cables excel file.
 # @return Map of cables with their type as a key.
 def readCablesExcel(filePath):
@@ -233,7 +233,8 @@ def readLinesExcel(filePath,cables,graph):
 		if fromBus == toBus:
 			continue
 
-		if not graph.has_edge(fromBus, toBus):
+		cable = getCable(cables, row, sheet)
+		if graph.get_edge_data(fromBus,toBus,id) is None:
 			# This is the first (and maybe only) segment of the link between these buses
 			fromBusBar = excelStr2int(sheet.cell_value(row, FROM_BUSBAR_COLUMN))
 			fromCell = excelStr2int(sheet.cell_value(row, FROM_CELL_COLUMN))
@@ -260,17 +261,15 @@ def readLinesExcel(filePath,cables,graph):
 			if not closed:
 				openLines.add(id)
 
-		# Get the length and compute the characteristics
-		cable = getCable(cables, row, sheet)
-		if not graph.has_edge(fromBus, toBus):
+			# Get the length and compute the characteristics
 			lineAttr={}
 			lineAttr["id"]=id
-			lineAttr["length"]=float(sheet.cell_value(row, LINE_LENGTH_COLUMN))
+			lineAttr["length"]=float(sheet.cell_value(row, LINE_LENGTH_COLUMN))*1e-3 # in km
 			voltage=float(sheet.cell_value(row, LINE_VOLTAGE_COLUMN))
-			lineAttr["R1"]=lineAttr["length"]*cable.R1
-			lineAttr["X1"]=lineAttr["length"]*cable.X1
-			lineAttr["C1"]=lineAttr["length"]*cable.C1
-			lineAttr["pMax"]=voltage*cable.iMax
+			lineAttr["R1"]=lineAttr["length"]*cable.R1 # in Ohm
+			lineAttr["X1"]=lineAttr["length"]*cable.X1 # in Ohm
+			lineAttr["C1"]=lineAttr["length"]*cable.C1 # in microFarad
+			lineAttr["pMax"]=voltage*cable.iMax # in VA
 			lineAttr["internalId"]=lineCount
 			lineAttr["closed"]=closed
 
@@ -280,36 +279,61 @@ def readLinesExcel(filePath,cables,graph):
 			graph.add_edge(fromBus,toBus,id,lineAttr)
 		else:
 			edgeData = graph.get_edge_data(fromBus,toBus,id)
-			# FIXME !!!
-			# R1 = edgeData["R1"]
-			# X1 = edgeData["X1"]
-			# C1 = edgeData["C1"]
-            #
-			# from math import pi
-			# omega = 2*pi*50
-            #
-			# Z1 = R1 + 1j*X1
-			# B1 = omega*C1
-			# Z2 = cable.R1 + 1j*cable.X1
-			# B2 = omega*cable.C1
-            #
-			# Y3 = 1j*(B1+B2)/2
-			# Z3 = 1/Y3 if abs(Y3) > 0 else 0
-			# YY1 = Z3/(Z1*Z2+Z1*Z3+Z2*Z3)
-			# YY2 = Z2/(Z1*Z2+Z1*Z3+Z2*Z3)
-			# YY3 = Z1/(Z1*Z2+Z1*Z3+Z2*Z3)
-            #
-			# Y12 = YY1+1j*B1/2
-			# Y13 = YY2+1j*B2/2
-            #
-			# edgeData["R1"] = YY1.real
-			# edgeData["X1"] = YY1.imag
-			# edgeData["C1"] = Y12.imag
+			# We have several segments, compute the overall impedance!!!
+			R1 = edgeData["R1"] # in Ohm
+			X1 = edgeData["X1"] # in Ohm
+			C1 = edgeData["C1"] # in microFarad
+
+			from math import pi
+			baseFrequency = 50
+			omega = 2*pi*baseFrequency
+
+			# First pi-model
+			Z1 = R1 + 1j*X1
+			B1 = omega*C1*1e-6
+			#Second pi-model
+			length = float(sheet.cell_value(row, LINE_LENGTH_COLUMN))*1e-3
+			Z2 = length*cable.R1 + 1j *length*cable.X1
+			B2 = omega*length*cable.C1 * 1e-6
+
+			# Residual shunt admittance "in the middle"
+			Y3 = 1j*(B1+B2)/2
+
+			if abs(Y3) > 0:
+				# Start to triangle
+				Z3 = 1/Y3
+				YY1 = Z3/(Z1*Z2+Z1*Z3+Z2*Z3)
+				YY2 = Z2/(Z1*Z2+Z1*Z3+Z2*Z3)
+				YY3 = Z1/(Z1*Z2+Z1*Z3+Z2*Z3)
+
+				Y12 = YY2+1j*B1/2
+				Y13 = YY3+1j*B2/2
+
+				Yaverage23 = Y12+Y13/2
+				edgeData["R1"] = YY1.real # in Ohm
+				edgeData["X1"] = YY1.imag # in Ohm
+				edgeData["C1"] = Yaverage23.imag/omega * 1e6 # in microFarad
+			else:
+				# Just sum up the two line impedances
+				Z = Z1+Z2
+				edgeData["R1"] = Z.real # in Ohm
+				edgeData["X1"] = Z.imag # in Ohm
+				edgeData["C1"] = 0 # in microFarad
+
+			# Maximum capacity is the minimum of the capacity of the two segments
+			voltage=float(sheet.cell_value(row, LINE_VOLTAGE_COLUMN))
+			edgeData["pMax"] = min(edgeData["pMax"], voltage*cable.iMax)
 
 	if len(unknownBuses) > 0:
 		print("%s unknown buses in the lines file \"%s\":\n\t%s"%(len(unknownBuses),filePath,sorted(unknownBuses)))
 	if len(openLines) > 0:
 		print("%s open lines in the lines file \"%s\":\n\t%s"%(len(openLines),filePath,sorted(openLines)))
+
+	# Check non-connected buses
+	aloneBuses=set(filter(lambda n: len(graph.neighbors(n)) == 0, graph.nodes()))
+	if len(aloneBuses) > 0:
+		print("%s buses alone according to the lines file \"%s\":\n\t%s"%(len(aloneBuses),filePath,sorted(aloneBuses)))
+
 
 ## Read the lines excel file with the MV-LV transformers.
 # @param filePath Path to the excel file with the information on the transformers.
@@ -377,3 +401,8 @@ class TransformerData:
 	# Bus to which the transformer is attached.
 	## @var pmax
 	# Maximal power of the transformer.
+
+## Detect the buses at the end of the network without loads.
+def detectEndBuses(g):
+	endBuses=set(filter(lambda n: len(g.neighbors(n)) == 1 and ('load' not in g.node[n] or g.node[n]['load'] is None), g.nodes()))
+	print("End buses:\n\t%s"%endBuses)

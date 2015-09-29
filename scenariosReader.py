@@ -4,6 +4,7 @@
 
 import xlrd
 import datetime, math
+import networkMaker
 
 # Constants
 ## File with the information on the scenarios.
@@ -24,6 +25,7 @@ def readScenarios(folderPath,year,day,graph,scenarioType='H'):
 
 	profilesType=readCalendarExcel(folderPath+CALENDAR_FILE,year,day)
 	readLoadProfilesExcel(folderPath+LOAD_PROFILES_FILE,day,graph,profilesType)
+	networkMaker.detectEndBuses(graph)
 
 ## Read and attached the load profiles to each buses.
 # @param filePath Path to the load profiles excel file.
@@ -256,7 +258,7 @@ def readScenariosExcel(filePath,year,graph,scenarioType='H'):
 	if len(doubleLoads) > 0:
 		print("%s double loads in the scenarios file \"%s\" for the following buses:\n\t%s"%(len(doubleLoads),filePath,doubleLoads))
 
-# Load of the network which may be production and/or consumption.
+## Load of the network which may be production and/or consumption.
 class LoadData:
 	## Constructor.
 	# @param internalId Internal id of the load.

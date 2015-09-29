@@ -38,7 +38,7 @@ def makeNetworkDot(networkGraph):
 	INDUSTRIAL_TYPES=['I1','I2','I3']
 
 	# Map where keys are bus ids and value graphviz ids.
-	origIdToCount={}
+	idToGvId={}
 
 	# Style of the graph
 	g=networkx.Graph()
@@ -51,18 +51,18 @@ def makeNetworkDot(networkGraph):
 	for n,ndata in networkGraph.nodes(data=True):
 		# Take care of unknown nodes
 		id=None
-		origId=id
+		internalId=id
 		try:
-			origId=ndata["id"]
+			internalId=ndata["id"]
 			id="BUS%s"%ndata["internalId"]
 		except KeyError:
 			unknownCount-=1
-			origId="?"
+			internalId="?"
 			id="BUS%s"%(-unknownCount)
-		origIdToCount[n]=id
+		idToGvId[n]=id
 
 		# Add styled node
-		g.add_node(id,{"xlabel":origId,"shape":"box","style":"filled","color":"#000000","fixedsize":"true","width":0.5,"height":0.075,"label":" ","fontsize":10})
+		g.add_node(id,{"xlabel":internalId,"shape":"box","style":"filled","color":"#000000","fixedsize":"true","width":0.5,"height":0.075,"label":" ","fontsize":10})
 
 		# Transformer
 		tId=None
@@ -73,7 +73,7 @@ def makeNetworkDot(networkGraph):
 
 				tId="TF%s"%t.internalId
 				g.add_node(tId,{"xlabel":t.id,"shape":"circle","style":"filled","color":"#000000","fixedsize":"true","width":0.15,"height":0.15,"label":" ","fontsize":10})
-				g.add_edge(id,tId,{"weight":1000})
+				g.add_edge(id,tId,{"weight":10000})
 		except KeyError:
 			pass
 
@@ -81,7 +81,7 @@ def makeNetworkDot(networkGraph):
 		load=ndata["load"]
 		if load is not None:
 			loadId="LOAD%s"%load.internalId
-			edgeAttr={"weight":1000}
+			edgeAttr={"weight":10000}
 			if load.loadType in GENERATION_TYPES:
 				g.add_node(loadId,{"label": "~","shape":"circle","style":"bold","color":"#000000","fixedsize":"true", "penwidth":2, "width":0.2, "height":0.2,"fontsize":18})
 			elif load.loadType in INDUSTRIAL_TYPES:
@@ -101,17 +101,18 @@ def makeNetworkDot(networkGraph):
 	for u,v,edata in networkGraph.edges(data=True):
 		if not edata["closed"]:
 			pass
-		uId=origIdToCount[u]
-		vId=origIdToCount[v]
+		uId=idToGvId[u]
+		vId=idToGvId[v]
 		if not g.has_edge(uId,vId):
 			w=10/(1+edata["length"])
 			g.add_edge(uId,vId,{"label":"     .     ","fontsize":10,"weight":w})
 
 	networkx.write_dot(g,'network.gv')
 
-	# Convert to pdf
+	# Convert to pdf and gml
 	with open(os.devnull, 'wb') as devnull:
-		subprocess.check_call(['neato', '-Tpdf', '-onetwork.pdf', 'network.gv'], stdout=devnull, stderr=subprocess.STDOUT)
+		subprocess.check_call(['neato', '-Tsvg', '-onetwork.svg', 'network.gv'], stdout=devnull, stderr=subprocess.STDOUT)
+		subprocess.check_call(['gv2gml', '-onetwork.gml', 'network.gv'], stdout=devnull, stderr=subprocess.STDOUT)
 
 ## Display help of the program.
 def displayHelp():
