@@ -26,6 +26,7 @@ def main(argv):
 
 	# Provide slack bus external ID as second argument
 	slackBusId = int(argv[1])
+	period = int(argv[2]) # Period in the scenario
 
 	# Provide period of the scenario as third argument
 	if not 0<period<96:
@@ -124,7 +125,8 @@ def makePyflowCSV(fileName, networkGraph, caseName, slackBusId, period):
 	writeLine(outFile,'    #["bus","Pg","Qg","Qmax","Qmin","Vg","mBase","status","Pmax","Pmin","Pc1","Pc2","Qc1min","Qc1max","Qc2min","Qc2max","ramp_agc","ramp_10","ramp_30","ramp_q","apf"]')
 	# Write slack bus
 	writeLine(outFile, """    %s,""" % [slackBusId, 0,   0, 300, -300, 1, 100, 1, 250, -250, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-	# Write generators
+
+    # Write generators
 	generators = [] # As a list of values
 	for gen in generators: 	# TODO
 		writeLine(outFile,"""    %s,""" % gen)
@@ -134,7 +136,6 @@ def makePyflowCSV(fileName, networkGraph, caseName, slackBusId, period):
 	# First, filtering the data and ordering it according to the internalId
 	branchData = {}
 	for u,v,edata in networkGraph.edges(data=True):
-		# TODO Handle case of multi-branches
 		Zb = (baseKV*1e3)**2/(baseMVA*1e6) # in Ohm
 		r = round(edata['R1'] / Zb,6) # in p.u.
 		x = round(edata['X1'] / Zb,6) # in p.u.
