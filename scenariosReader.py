@@ -55,7 +55,7 @@ def readLoadProfilesExcel(filePath,day,graph,profilesType):
 		baseActiveProfiles[pType]=sheet.col_values(1, start_rowx=PROFILES_HEADERS_ROW[pType]+2, end_rowx=PROFILES_HEADERS_ROW[pType]+2+96)
 
 	# Day dependent profiles
-	for pType in ['PV','Wind','IEP','CHP']:
+	for pType in ['PV','Wind','IEP']:
 		sheet=xl.sheet_by_name(pType)
 		baseActiveProfiles[pType]=sheet.col_values(2, start_rowx=PROFILES_HEADERS_ROW[pType]+1+day*96, end_rowx=PROFILES_HEADERS_ROW[pType]+1+(day+1)*96)
 
@@ -76,7 +76,7 @@ def readLoadProfilesExcel(filePath,day,graph,profilesType):
 		# Get the base profile
 		if pType in ['R','HP']:
 			baseActiveProfiles[pType]=sheet.col_values(c, start_rowx=PROFILES_HEADERS_ROW[pType]+2, end_rowx=PROFILES_HEADERS_ROW[pType]+2+96)
-		elif pType in ['I1','I2','I3']:
+		elif pType in ['I1','I2','I3','CHP']:
 			baseActiveProfiles[pType]=sheet.col_values(c, start_rowx=PROFILES_HEADERS_ROW[pType]+2, end_rowx=PROFILES_HEADERS_ROW[pType]+2+96)
 			baseReactiveProfiles[pType]=sheet.col_values(c+1, start_rowx=PROFILES_HEADERS_ROW[pType]+2, end_rowx=PROFILES_HEADERS_ROW[pType]+2+96)
 		else:
@@ -144,7 +144,7 @@ def readCalendarExcel(filePath,year,day):
 	# Day type abbreviation map column.
 	CALENDAR_ABBRV_MAP_COL=34
 	# Load type of the calendar.
-	CALENDAR_LOAD_TYPES=['R','HP','I1','I2','I3']
+	CALENDAR_LOAD_TYPES=['R','HP','I1','I2','I3','CHP']
 
 
 	# Get the date corresponding to the day of the year
