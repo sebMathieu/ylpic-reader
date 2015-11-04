@@ -34,13 +34,13 @@ def readBusesExcel(filePath,graph):
 
 	# Read the file
 	xl = xlrd.open_workbook(filePath,on_demand=True)
-	busCount=0
+	busCount=1
 	for sheet in xl.sheets():
 		for row in range(1,sheet.nrows):
 			id=excelStr2int(sheet.cell_value(row, BUS_ID_COLUMN))
 			v=sheet.cell_value(row, BUS_VOLTAGE_COLUMN)
 			connection_info = (excelStr2int(sheet.cell_value(row, BUS_BAR_COLUMN)), excelStr2int(sheet.cell_value(row, CELL_COLUMN)))
-			connection_closed = True if sheet.cell_value(row, CELL_STATUS_COLUMN) == 'F' else False
+			connection_closed = True if sheet.cell_value(row, CELL_STATUS_COLUMN) in ['F','V'] else False
 			if graph.has_node(id):
 				graph.node[id]["count"]+=1
 				graph.node[id]["connections"][connection_info] = connection_closed
@@ -76,30 +76,6 @@ def makeNetwork(folderPath):
 	#TODO: check sum of length of segments equals encoded line length
 
 	return graph
-
-## Convert the multigraph of the network to a graph.
-# @param mg Multigraph.
-# @return Graph.
-def multiGraphToGraph(mg):
-	g=networkx.Graph()
-
-	for n,ndata in mg.nodes(data=True):
-		g.add_node(n,ndata)
-
-	lineCount=1
-	for u,v,edata in mg.edges(data=True):
-		if g.has_edge(u,v):
-			# Replace the line if needed
-			if g.get_edge_data(u,v)["pMax"] < edata["pMax"]:
-				edata["number"]=g.get_edge_data(u,v)["number"]
-				g.remove_edge(u,v)
-				g.add_edge(u,v,edata)
-		else:
-			edata["number"]=lineCount
-			lineCount+=1
-			g.add_edge(u,v,edata)
-
-	return g
 
 ## Read the cables excel file content.
 # @param filePath Path to the cables excel file.
@@ -214,8 +190,10 @@ def readLinesExcel(filePath,cables,graph):
 	TO_BUSBAR_COLUMN=5
 	# Number of the column of the cell on the bus bar on the "to" bus
 	TO_CELL_COLUMN=6
-	# Number of the column of the length.
-	LINE_LENGTH_COLUMN=20
+	# Number of the column of the total length of the line.
+	LINE_LENGTH_COLUMN=11
+	# Number of the column of the length of the segment.
+	SEGMENT_LENGTH_COLUMN=20
 	# Number of the column of the line voltage.
 	LINE_VOLTAGE_COLUMN=13
 
@@ -291,8 +269,9 @@ def readLinesExcel(filePath,cables,graph):
 			# First pi-model
 			Z1 = R1 + 1j*X1
 			B1 = omega*C1*1e-6
+
 			#Second pi-model
-			length = float(sheet.cell_value(row, LINE_LENGTH_COLUMN))*1e-3
+			length = float(sheet.cell_value(row, SEGMENT_LENGTH_COLUMN))*1e-3
 			Z2 = length*cable.R1 + 1j *length*cable.X1
 			B2 = omega*length*cable.C1 * 1e-6
 
@@ -310,8 +289,9 @@ def readLinesExcel(filePath,cables,graph):
 				Y13 = YY3+1j*B2/2
 
 				Yaverage23 = Y12+Y13/2
-				edgeData["R1"] = YY1.real # in Ohm
-				edgeData["X1"] = YY1.imag # in Ohm
+				RR1=1/YY1
+				edgeData["R1"] = RR1.real # in Ohm
+				edgeData["X1"] = RR1.imag # in Ohm
 				edgeData["C1"] = Yaverage23.imag/omega * 1e6 # in microFarad
 			else:
 				# Just sum up the two line impedances

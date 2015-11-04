@@ -25,8 +25,7 @@ def main(argv):
 	scenariosReader.readScenarios(folderPath,2020,1,graph,'H')
 
 	# Create simple graph and draw
-	g=networkMaker.multiGraphToGraph(graph)
-	makeNetworkDot(g)
+	makeNetworkDot(graph)
 
 ## Make a dot file from a network.
 # @param networkGraph Graph of the network.
@@ -100,7 +99,7 @@ def makeNetworkDot(networkGraph):
 	# Create edges
 	for u,v,edata in networkGraph.edges(data=True):
 		if not edata["closed"]:
-			pass
+			continue
 		uId=idToGvId[u]
 		vId=idToGvId[v]
 		if not g.has_edge(uId,vId):
