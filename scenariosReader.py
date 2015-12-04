@@ -14,6 +14,14 @@ CALENDAR_FILE="YearCalendar 2015-2020-2030-2050 for profile.xlsx"
 ## File with the load profiles/
 LOAD_PROFILES_FILE="catalogue charge V3.xlsx"
 
+# Buffers of excel files and their path
+networkMaker.BUFFER_CALENDAR = None
+networkMaker.BUFFER_CALENDAR_FILE = None
+networkMaker.BUFFER_PROFILES = None
+networkMaker.BUFFER_PROFILES_FILE = None
+networkMaker.BUFFER_SCENARIOS = None
+networkMaker.BUFFER_SCENARIOS_FILE = None
+
 ## Add loads to the corresponding network graph from the scenarios files.
 # @param folderPath Path to the folder with the Excel data files.
 # @param year Year of the scenarios.
@@ -25,7 +33,7 @@ def readScenarios(folderPath,year,day,graph,scenarioType='H'):
 
 	profilesType=readCalendarExcel(folderPath+CALENDAR_FILE,year,day)
 	readLoadProfilesExcel(folderPath+LOAD_PROFILES_FILE,day,graph,profilesType)
-	networkMaker.detectEndBuses(graph)
+	#networkMaker.detectEndBuses(graph)
 
 ## Read and attached the load profiles to each buses.
 # @param filePath Path to the load profiles excel file.
@@ -33,7 +41,11 @@ def readScenarios(folderPath,year,day,graph,scenarioType='H'):
 # @param graph Graph to add the loads.
 # @param profilesType Type of profiles for the day.
 def readLoadProfilesExcel(filePath,day,graph,profilesType):
-	xl=xlrd.open_workbook(filePath,on_demand=True)
+	# Open excel (buffered)
+	if filePath != networkMaker.BUFFER_PROFILES_FILE:
+		networkMaker.BUFFER_PROFILES = xlrd.open_workbook(filePath,on_demand=True)
+		networkMaker.BUFFER_PROFILES_FILE = filePath
+	xl = networkMaker.BUFFER_PROFILES
 
 	# Constants
 	# Row of the headers profile
@@ -57,7 +69,7 @@ def readLoadProfilesExcel(filePath,day,graph,profilesType):
 	# Day dependent profiles
 	for pType in ['PV','Wind','IEP']:
 		sheet=xl.sheet_by_name(pType)
-		baseActiveProfiles[pType]=sheet.col_values(2, start_rowx=PROFILES_HEADERS_ROW[pType]+1+day*96, end_rowx=PROFILES_HEADERS_ROW[pType]+1+(day+1)*96)
+		baseActiveProfiles[pType]=sheet.col_values(2, start_rowx=PROFILES_HEADERS_ROW[pType]+1+(day-1)*96, end_rowx=PROFILES_HEADERS_ROW[pType]+1+day*96)
 
 	# Obtain the base profile dependent on the calendar
 	for pType in profilesType:
@@ -129,7 +141,7 @@ def readLoadProfilesExcel(filePath,day,graph,profilesType):
 def readCalendarExcel(filePath,year,day):
 	# Start cell of the month in the calendar excel.
 	CALENDAR_CELLS={'January':(3,2),'February':(18,2),'March':(33,2),
-					'April':(3,10),'May':(18,10),'June':(33,2),
+					'April':(3,10),'May':(18,10),'June':(33,10),
 					'July':(3,18),'August':(18,18),'September':(33,18),
 					'October':(3,26),'November':(18,26),'December':(33,26)
 					}
@@ -153,9 +165,14 @@ def readCalendarExcel(filePath,year,day):
 	month=date.strftime("%B")
 	excelOrdinal=int(date.toordinal()-ORDINAL_EXCEL_DIF)
 
-	# Open excel
+	# Open excel (buffered)
+	if filePath != networkMaker.BUFFER_CALENDAR_FILE:
+		networkMaker.BUFFER_CALENDAR = xlrd.open_workbook(filePath,on_demand=True)
+		networkMaker.BUFFER_CALENDAR_FILE = filePath
+	xl = networkMaker.BUFFER_CALENDAR
+
+	# Read from it
 	profilesType={}
-	xl = xlrd.open_workbook(filePath,on_demand=True)
 	for loadType in CALENDAR_LOAD_TYPES:
 		sheet=xl.sheet_by_name("%s %s"%(loadType,year))
 
@@ -208,6 +225,12 @@ def readCalendarExcel(filePath,year,day):
 # @param graph Graph to add the loads.
 # @param scenarioType Type of scenario. Usually 'L' or 'H'.
 def readScenariosExcel(filePath,year,graph,scenarioType='H'):
+	# Open excel (buffered)
+	if filePath != networkMaker.BUFFER_SCENARIOS_FILE:
+		networkMaker.BUFFER_SCENARIOS = xlrd.open_workbook(filePath,on_demand=True)
+		networkMaker.BUFFER_SCENARIOS_FILE = filePath
+	xl = networkMaker.BUFFER_SCENARIOS
+
 	# Constants
 	# Number of rows of the header of the scenario sheet.
 	SCENARIOS_HEADER_SIZE=6
@@ -222,7 +245,6 @@ def readScenariosExcel(filePath,year,graph,scenarioType='H'):
 	loadCount=1
 	unknownBuses=set()
 	doubleLoads=set()
-	xl = xlrd.open_workbook(filePath,on_demand=True)
 	sheet=xl.sheet_by_name("scenarios %s %s"%(year,scenarioType))
 	for row in range(SCENARIOS_HEADER_SIZE,sheet.nrows):
 
