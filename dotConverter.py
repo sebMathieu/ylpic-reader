@@ -61,7 +61,7 @@ def makeNetworkDot(networkGraph):
 		idToGvId[n]=id
 
 		# Add styled node
-		g.add_node(id,{"xlabel":internalId,"shape":"box","style":"filled","color":"#000000","fixedsize":"true","width":0.5,"height":0.075,"label":" ","fontsize":10})
+		g.add_node(id,{"xlabel":internalId,"shape":"box","style":"filled","color":"#000000","fixedsize":"true","width":0.5,"height":0.075,"label":" ","fontsize":10,"id":id})
 
 		# Transformer
 		tId=None
@@ -104,7 +104,7 @@ def makeNetworkDot(networkGraph):
 		vId=idToGvId[v]
 		if not g.has_edge(uId,vId):
 			w=10/(1+edata["length"])
-			g.add_edge(uId,vId,{"label":"     .     ","fontsize":10,"weight":w})
+			g.add_edge(uId,vId,{"label":"     .     ","fontsize":10,"weight":w, "id": "LINE%s"%edata["internalId"]})
 
 	networkx.write_dot(g,'network.gv')
 

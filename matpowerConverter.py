@@ -8,7 +8,7 @@
 #TODO Transformers
 #TODO Shunt admittances at buses
 
-import sys,os
+import sys, os, copy
 import networkx
 import math
 
@@ -18,43 +18,65 @@ import scenariosReader
 ## Entry point of the program.
 # @param argv Program parameters: data folder path, slack bus id, period of interest (scenario hardcoded for now).
 def main(argv):
-	# Read instance folder
-	if len(argv) < 2 :
+	# Provide slack bus external ID as second argument
+	if len(argv) == 3:
+		folderPath=argv[0] if argv[0].endswith(("/","\\")) else argv[0]+"/"
+		slackBusId = int(argv[1])
+		period = int(argv[2]) # Period in the scenario
+
+		# Provide period of the scenario as third argument
+		if not 0<period<=96:
+			raise Exception('Invalid period %s'%period)
+
+		if not os.path.exists(folderPath):
+			raise Exception('Folder \"%s\" does not exists.' % folderPath)
+
+		# Read network data (all but power information)
+		graph=networkMaker.makeNetwork(folderPath)
+
+		# Read power information, select time horizon, day number, and scenario type.
+		scenariosReader.readScenarios(folderPath,2020,1,graph,'H')
+
+		# Output
+		makeMatpowerFile('caseYlpic.m', graph, 'ylpic', slackBusId, period)
+
+	elif len(argv) == 4 or len(argv) == 5:
+		folderPath=argv[0] if argv[0].endswith(("/","\\")) else argv[0]+"/"
+		slackBusId = int(argv[1])
+		year = int(argv[2])
+		scenario = argv[3]
+		outputPath = ""
+		if len(argv) == 5:
+			outputPath = argv[4] + "/"
+
+		# Read network data (all but power information)
+		graph=networkMaker.makeNetwork(folderPath)
+
+		days=range(1,366)
+		for d in days:
+			print("\t%s" % d)
+			g = copy.deepcopy(graph)
+			scenariosReader.readScenarios(folderPath,year,d,g,scenario)
+
+			for period in range(1,97):
+				makeMatpowerFile('%sylpic_y%ss%sd%sp%s.m' % (outputPath,year, scenario, d, period), g, 'ylpic_y%ss%sd%sp%s' % (year, scenario, d, period), slackBusId, period-1)
+	else:
 		displayHelp()
 		sys.exit(2)
-	folderPath=argv[0] if argv[0].endswith(("/","\\")) else argv[0]+"/"
-
-	# Provide slack bus external ID as second argument
-	slackBusId = int(argv[1])
-	period = int(argv[2]) # Period in the scenario
-
-	# Provide period of the scenario as third argument
-	if not 0<period<96:
-		raise Exception('Invalid period %s'%period)
-
-	if not os.path.exists(folderPath):
-		raise Exception('Folder \"%s\" does not exists.' % folderPath)
-
-	# Read network data (all but power information)
-	graph=networkMaker.makeNetwork(folderPath)
-
-	# Read power information, select time horizon, day number, and scenario type.
-	scenariosReader.readScenarios(folderPath,2020,1,graph,'H')
-
-	# Output
-	makePyflowCSV('caseYlpic.m', graph, 'ylpic', slackBusId, period)
 
 ## Display help of the program.
 def displayHelp():
-	text="Usage :\n\tpython pyflowConverter.py dataFolder slackBusId period\n"
+	text="Usage :\n\tpython matpowerConverter.py dataFolder slackBusId period\n"
+	text+="\tpython matpowerConverter.py dataFolder slackBusId year scenario [outputFolder]\n"
 	print(text)
+
 
 ## Convenience function
 def writeLine(outFile,str2Write):
 	outFile.write("""    %s\n""" % str2Write)
 	return
 
-def makePyflowCSV(fileName, networkGraph, caseName, slackBusId, period):
+def makeMatpowerFile(fileName, networkGraph, caseName, slackBusId, period):
 
 	# Constants for conversion to per unit
 	baseMVA = 100 # MVA

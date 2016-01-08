@@ -53,9 +53,9 @@ def readLoadProfilesExcel(filePath,day,graph,profilesType):
 	# Sign (+1 or -1) of the profile, positive for a production.
 	PROFILES_SIGN={'R':-1, 'HP':-1,'I1':-1,'I2':-1,'I3':-1,'EC':-1,'PV':1,'Wind':1,'IEP':-1,'CHP':1}
 	# Power factors of each profiles.
-	PROFILES_POWER_FACTOR={'HP':0.91}
+	PROFILES_POWER_FACTOR={'HP':0.91, 'R':0.9}
 	# Default power factor.
-	PROFILES_DEFAULT_POWER_FACTOR=0.95
+	PROFILES_DEFAULT_POWER_FACTOR=1.0
 
 	# Obtain the base profiles
 	baseActiveProfiles={}
