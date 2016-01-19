@@ -44,12 +44,24 @@ def main(argv):
 	# Header
 	sheet.write(0,0,'Day')
 	sheet.write(0,1,'Quarter')
-	sheet.write(0,2,'Active production [MW]')
-	sheet.write(0,3,'Active consumption [MW]')
-	sheet.write(0,4,'Net active flow [MW]')
-	sheet.write(0,5,'Reactive Production [MVar]')
-	sheet.write(0,6,'Reactive Consumption [MVar]')
-	sheet.write(0,7,'Net reactive flow [MVar]')
+
+	sheet.write(0,2,'Active production')
+	sheet.write(1,2,'MW')
+
+	sheet.write(0,3,'Active consumption')
+	sheet.write(1,3,'MW')
+
+	sheet.write(0,4,'Net active flow')
+	sheet.write(1,4,'MW')
+
+	sheet.write(0,5,'Reactive Production')
+	sheet.write(1,5,'MVar')
+
+	sheet.write(0,6,'Reactive Consumption')
+	sheet.write(1,6,'MVar')
+
+	sheet.write(0,7,'Net reactive flow')
+	sheet.write(1,7,'MVar')
 
 	# Read graph
 	initGraph = networkMaker.makeNetwork(folderPath)
@@ -68,7 +80,7 @@ def main(argv):
 		scenariosReader.readScenarios(folderPath,year,d+1,graph,scenario)
 
 		for t in range(0, T):
-			l=1+d*T+t # Excel line
+			l=2+d*T+t # Excel line
 
 			# Write day and quarter
 			sheet.write(l, 0, day, dateStyle)

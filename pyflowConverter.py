@@ -59,7 +59,7 @@ def main(argv):
 			scenariosReader.readScenarios(folderPath,year,d,g,scenario)
 
 			for period in range(1,97):
-				makePyflowFile('%sylpic_y%ss%sd%sp%s.py' % (outputPath,year, scenario, d, period), g, 'ylpic_y%ss%sd%sp%s.py' % (year, scenario, d, period), slackBusId, period-1)
+				makePyflowFile('%sylpic_y%ss%sd%sp%s.py' % (outputPath,year, scenario, d, period), g, 'ylpic_y%ss%sd%sp%s' % (year, scenario, d, period), slackBusId, period-1)
 	else:
 		displayHelp()
 		sys.exit(2)

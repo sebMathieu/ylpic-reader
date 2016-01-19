@@ -128,8 +128,6 @@ def makeMatpowerFile(fileName, networkGraph, caseName, slackBusId, period):
 		# Base voltage
 		if baseKV == -1:
 			baseKV = ndata['baseVoltage']/1e3
-		elif baseKV != ndata['baseVoltage']/1e3:
-			print("Warning: several voltage levels: %f" % (ndata['baseVoltage']/1000))
 
 		busData[ndata['internalId']] = [n, type, Pd, Qd, Gs, Bs, 1, 1, 0,baseKV,1,VLimitUp,VLimitDown]
 

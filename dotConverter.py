@@ -104,7 +104,7 @@ def makeNetworkDot(networkGraph):
 		vId=idToGvId[v]
 		if not g.has_edge(uId,vId):
 			w=10/(1+edata["length"])
-			g.add_edge(uId,vId,{"label":"     .     ","fontsize":10,"weight":w, "id": "LINE%s"%edata["internalId"]})
+			g.add_edge(uId,vId,{"label":"     .     ","fontsize":10,"weight":w, "id": "LINE%s"%(edata["internalId"]+1)})
 
 	networkx.write_dot(g,'network.gv')
 
