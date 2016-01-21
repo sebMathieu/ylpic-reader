@@ -4,6 +4,7 @@
 
 import xlrd
 import networkx
+from math import sqrt
 
 # Constants
 ## File with the information on the buses.
@@ -247,7 +248,7 @@ def readLinesExcel(filePath,cables,graph):
 			lineAttr["R1"]=lineAttr["length"]*cable.R1 # in Ohm
 			lineAttr["X1"]=lineAttr["length"]*cable.X1 # in Ohm
 			lineAttr["C1"]=lineAttr["length"]*cable.C1 # in microFarad
-			lineAttr["pMax"]=voltage*cable.iMax # in VA
+			lineAttr["pMax"]=sqrt(3)*voltage*cable.iMax # in VA
 			lineAttr["internalId"]=lineCount
 			lineAttr["closed"]=closed
 
@@ -302,7 +303,7 @@ def readLinesExcel(filePath,cables,graph):
 
 			# Maximum capacity is the minimum of the capacity of the two segments
 			voltage=float(sheet.cell_value(row, LINE_VOLTAGE_COLUMN))
-			edgeData["pMax"] = min(edgeData["pMax"], voltage*cable.iMax)
+			edgeData["pMax"] = min(edgeData["pMax"], sqrt(3)*voltage*cable.iMax)
 
 	if len(unknownBuses) > 0:
 		print("%s unknown buses in the lines file \"%s\":\n\t%s"%(len(unknownBuses),filePath,sorted(unknownBuses)))
