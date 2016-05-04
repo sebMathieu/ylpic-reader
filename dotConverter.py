@@ -44,8 +44,6 @@ def makeNetworkDot(networkGraph):
 
     # Style of the graph
     g=networkx.Graph()
-    g.add_node("graph",{"splines":"line","outputorder":"edgesfirst","overlap":"false"}) #splines:line,ortho
-    g.add_node("edge",{"penwidth":2,"tailclip":"false","constraint":"true"})
 
     # Create nodes
     unknownCount=len(networkGraph.nodes())
@@ -107,13 +105,30 @@ def makeNetworkDot(networkGraph):
         vId=idToGvId[v]
         if not g.has_edge(uId,vId):
             w=10/(1+edata["length"])
-            g.add_edge(uId,vId,{"label":"     .     ","fontsize":10,"weight":w, "id": "LINE%s"%(edata["internalId"]+1)})
+            g.add_edge(uId,vId,{"label":"     .     ","fontsize":10, "id": "LINE%s"%(edata["internalId"]+1)})
+
+    # Detect cycles
+    try:
+        cycles = networkx.cycle_basis(g)
+        for cy in cycles:
+            networkx.set_node_attributes(g,'color',dict(zip(cy,['#FF0000']*len(cy))))
+            print([g.node[b]['xlabel'] for b in cy])
+        print("Cycles: %d" %len(cycles))
+    except Exception as e:
+        print("Error %s" % e)
+
+    if not networkx.is_connected(g):
+        print("Warning: graph is not connected.")
+        components = [c for c in sorted(networkx.connected_components(g), key=len, reverse=True)]
+        print("Warning: graph contains %d connected components:" % len(components))
+        print(components)
 
     networkx.write_dot(g,'network.gv')
 
     # Convert to pdf and gml
     with open(os.devnull, 'wb') as devnull:
         subprocess.check_call(['neato', '-Tsvg', '-onetwork.svg', 'network.gv'], stdout=devnull, stderr=subprocess.STDOUT)
+        subprocess.check_call(['neato', '-Tpdf', '-onetwork.pdf', 'network.gv'], stdout=devnull, stderr=subprocess.STDOUT)
         subprocess.check_call(['gv2gml', '-onetwork.gml', 'network.gv'], stdout=devnull, stderr=subprocess.STDOUT)
 
 ## Display help of the program.
