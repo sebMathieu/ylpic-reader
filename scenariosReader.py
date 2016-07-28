@@ -249,12 +249,17 @@ def readScenariosExcel(filePath,year,graph,scenarioType='H'):
 	for row in range(SCENARIOS_HEADER_SIZE,sheet.nrows):
 
 		# Get bus and check existence
-		bus=int(sheet.cell_value(row,SCENARIOS_BUS_COLUMN))
-		if bus==0: # Dummy line
+		try:
+			bus=int(sheet.cell_value(row,SCENARIOS_BUS_COLUMN))
+			if bus == 0:  # Dummy line
+				continue
+			elif not graph.has_node(bus):
+				unknownBuses.add(bus)
+				continue
+		except ValueError:
+			print("Line %d with bus name '%s' was ignored." % (row, sheet.cell_value(row,SCENARIOS_BUS_COLUMN)))
 			continue
-		elif not graph.has_node(bus):
-			unknownBuses.add(bus)
-			continue
+
 		# Fetch informations
 		loadType=sheet.cell_value(row,SCENARIOS_TYPE_COLUMN)
 
