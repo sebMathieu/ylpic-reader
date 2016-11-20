@@ -7,6 +7,7 @@ import sys,os,subprocess
 import networkx
 
 import networkMaker
+from networkx.drawing.nx_agraph import write_dot # Fix for broken write_dot
 import scenariosReader
 
 ## Option to display transformers.
@@ -123,7 +124,7 @@ def makeNetworkDot(networkGraph):
         print("Warning: graph contains %d connected components:" % len(components))
         print(components)
 
-    networkx.write_dot(g,'network.gv')
+    write_dot(g,'network.gv')
 
     # Convert to pdf and gml
     with open(os.devnull, 'wb') as devnull:

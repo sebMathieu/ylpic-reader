@@ -51,7 +51,7 @@ def main(argv):
 	sheet.write(0,3,'Active consumption')
 	sheet.write(1,3,'MW')
 
-	sheet.write(0,4,'Net active flow')
+	sheet.write(0,4,'Net active injection')
 	sheet.write(1,4,'MW')
 
 	sheet.write(0,5,'Reactive Production')
@@ -60,7 +60,7 @@ def main(argv):
 	sheet.write(0,6,'Reactive Consumption')
 	sheet.write(1,6,'MVar')
 
-	sheet.write(0,7,'Net reactive flow')
+	sheet.write(0,7,'Net reactive injection')
 	sheet.write(1,7,'MVar')
 
 	# Read graph
